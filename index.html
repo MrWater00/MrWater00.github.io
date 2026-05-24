@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Aman Singh — Network Engineer</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Fira+Code:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #1c2128;
+    --border: #30363d;
+    --green: #39d353;
+    --green-dim: #27c93f;
+    --blue: #58a6ff;
+    --cyan: #79c0ff;
+    --yellow: #e3b341;
+    --red: #ff7b72;
+    --purple: #d2a8ff;
+    --text: #e6edf3;
+    --text-dim: #8b949e;
+    --text-muted: #484f58;
+    --accent: #39d353;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  ::selection { background: #39d35330; color: #39d353; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    cursor: default;
+  }
+
+  /* SCANLINE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--green); }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: rgba(13,17,23,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    z-index: 100;
+    padding: 0 2rem;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--green);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+  }
+
+  .nav-brand .prompt { color: var(--text-dim); }
+
+  .nav-links {
+    display: flex;
+    gap: 0;
+    list-style: none;
+  }
+
+  .nav-links a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: 4px;
+    transition: color 0.2s, background 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .nav-links a:hover { color: var(--green); background: rgba(57,211,83,0.08); }
+  .nav-links a .num { color: var(--green); font-size: 11px; }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding: 80px 2rem 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .terminal-window {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 0 60px rgba(57,211,83,0.06), 0 20px 60px rgba(0,0,0,0.5);
+    animation: fadeUp 0.8s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .terminal-bar {
+    background: var(--bg3);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot-red   { background: #ff5f56; }
+  .dot-amber { background: #ffbd2e; }
+  .dot-green { background: #27c93f; }
+
+  .terminal-title {
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 11px;
+    color: var(--text-muted);
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .terminal-body {
+    padding: 2rem;
+    min-height: 420px;
+  }
+
+  .line {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 4px;
+    animation: appear 0.3s ease both;
+  }
+
+  .line:nth-child(1)  { animation-delay: 0.2s; }
+  .line:nth-child(2)  { animation-delay: 0.5s; }
+  .line:nth-child(3)  { animation-delay: 0.8s; }
+  .line:nth-child(4)  { animation-delay: 1.0s; }
+  .line:nth-child(5)  { animation-delay: 1.2s; }
+  .line:nth-child(6)  { animation-delay: 1.4s; }
+  .line:nth-child(7)  { animation-delay: 1.6s; }
+  .line:nth-child(8)  { animation-delay: 1.8s; }
+  .line:nth-child(9)  { animation-delay: 2.0s; }
+  .line:nth-child(10) { animation-delay: 2.2s; }
+  .line:nth-child(11) { animation-delay: 2.4s; }
+  .line:nth-child(12) { animation-delay: 2.6s; }
+  .line:nth-child(13) { animation-delay: 2.8s; }
+  .line:nth-child(14) { animation-delay: 3.0s; }
+  .line:nth-child(15) { animation-delay: 3.2s; }
+  .line:nth-child(16) { animation-delay: 3.4s; }
+
+  @keyframes appear {
+    from { opacity: 0; transform: translateX(-6px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .prompt-sym { color: var(--green); user-select: none; flex-shrink: 0; }
+  .cmd  { color: var(--blue); }
+  .arg  { color: var(--yellow); }
+  .out  { color: var(--text); padding-left: 20px; }
+  .out-dim { color: var(--text-dim); padding-left: 20px; }
+  .out-green { color: var(--green); padding-left: 20px; font-weight: 500; }
+  .out-big {
+    color: var(--green);
+    font-size: 28px;
+    font-weight: 700;
+    padding-left: 20px;
+    letter-spacing: 1px;
+    line-height: 1.2;
+  }
+  .out-role { color: var(--cyan); padding-left: 20px; font-size: 15px; }
+  .blank { height: 8px; }
+
+  .cursor {
+    display: inline-block;
+    width: 8px;
+    height: 16px;
+    background: var(--green);
+    animation: blink 1s step-end infinite;
+    vertical-align: middle;
+    margin-left: 2px;
+    animation-delay: 3.6s;
+    opacity: 0;
+  }
+
+  @keyframes blink {
+    0%,100% { opacity: 1; }
+    50%      { opacity: 0; }
+  }
+
+  /* SECTIONS */
+  section {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 5rem 2rem;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 2.5rem;
+  }
+
+  .section-num { color: var(--green); font-size: 13px; }
+
+  .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ABOUT */
+  .about-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+
+  .about-text p {
+    color: var(--text-dim);
+    line-height: 1.9;
+    font-size: 13px;
+    margin-bottom: 1rem;
+    font-family: 'Fira Code', monospace;
+  }
+
+  .about-text p span { color: var(--green); }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    align-content: start;
+  }
+
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .stat-card:hover {
+    border-color: var(--green);
+    box-shadow: 0 0 16px rgba(57,211,83,0.1);
+  }
+
+  .stat-num { font-size: 22px; font-weight: 700; color: var(--green); }
+  .stat-label { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+  /* SKILLS */
+  .skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .skill-group {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.2rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .skill-group:hover {
+    border-color: rgba(57,211,83,0.4);
+    box-shadow: 0 0 20px rgba(57,211,83,0.06);
+  }
+
+  .skill-group-title {
+    font-size: 11px;
+    color: var(--green);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .skill-group-title::before {
+    content: '//';
+    color: var(--text-muted);
+    font-size: 11px;
+  }
+
+  .skill-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .tag {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--cyan);
+    background: rgba(88,166,255,0.05);
+    font-family: 'Fira Code', monospace;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .tag:hover {
+    border-color: var(--cyan);
+    background: rgba(88,166,255,0.12);
+  }
+
+  /* PROJECTS */
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    gap: 20px;
+  }
+
+  .project-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .project-card:hover {
+    border-color: var(--green);
+    box-shadow: 0 0 30px rgba(57,211,83,0.1), 0 8px 24px rgba(0,0,0,0.3);
+    transform: translateY(-4px);
+  }
+
+  .project-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .project-icon {
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .project-link-icon {
+    color: var(--text-muted);
+    font-size: 16px;
+    transition: color 0.2s;
+  }
+
+  .project-card:hover .project-link-icon { color: var(--green); }
+
+  .project-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .project-desc {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.8;
+    flex: 1;
+    font-family: 'Fira Code', monospace;
+    margin-bottom: 16px;
+  }
+
+  .project-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+    margin-top: auto;
+  }
+
+  .project-tag {
+    font-size: 10px;
+    color: var(--green-dim);
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: rgba(57,211,83,0.08);
+    border: 1px solid rgba(57,211,83,0.2);
+    font-family: 'Fira Code', monospace;
+  }
+
+  /* CERT */
+  .cert-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    max-width: 560px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .cert-card:hover {
+    border-color: var(--yellow);
+    box-shadow: 0 0 20px rgba(227,179,65,0.1);
+  }
+
+  .cert-badge {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(227,179,65,0.1);
+    border: 2px solid var(--yellow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .cert-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--yellow);
+    margin-bottom: 4px;
+  }
+
+  .cert-meta { font-size: 12px; color: var(--text-dim); }
+
+  .cert-status {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 3px;
+    background: rgba(57,211,83,0.1);
+    border: 1px solid rgba(57,211,83,0.3);
+    color: var(--green);
+  }
+
+  /* CONTACT */
+  .contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .contact-text {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.9;
+    font-family: 'Fira Code', monospace;
+    margin-bottom: 1.5rem;
+  }
+
+  .contact-text span { color: var(--green); }
+
+  .contact-links {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .contact-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 13px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg2);
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+  }
+
+  .contact-link:hover {
+    border-color: var(--green);
+    color: var(--green);
+    background: rgba(57,211,83,0.05);
+  }
+
+  .contact-link-icon { font-size: 16px; color: var(--green); width: 20px; text-align: center; }
+
+  /* MORE PROJECTS */
+  .more-section {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem 2rem;
+  }
+
+  .more-title {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+  }
+
+  .more-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .more-tag {
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'Fira Code', monospace;
+    text-decoration: none;
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .more-tag:hover { border-color: var(--cyan); color: var(--cyan); }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 1.5rem 2rem;
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  footer span { color: var(--green); }
+
+  /* RESPONSIVE */
+  @media (max-width: 640px) {
+    .about-grid, .contact-grid { grid-template-columns: 1fr; }
+    .nav-links { display: none; }
+    .out-big { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <span class="prompt">~/</span>aman-singh
+  </div>
+  <ul class="nav-links">
+    <li><a href="#about"><span class="num">01.</span> about</a></li>
+    <li><a href="#skills"><span class="num">02.</span> skills</a></li>
+    <li><a href="#projects"><span class="num">03.</span> projects</a></li>
+    <li><a href="#contact"><span class="num">04.</span> contact</a></li>
+    <li><a href="Aman_Singh_CV.pdf" target="_blank"><span class="num">↗</span> resume</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="terminal-window">
+    <div class="terminal-bar" style="position:relative;">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-amber"></div>
+      <div class="dot dot-green"></div>
+      <span class="terminal-title">aman@network-lab: ~</span>
+    </div>
+    <div class="terminal-body">
+      <div class="line"><span class="prompt-sym">❯</span><span class="cmd">ssh</span>&nbsp;<span class="arg">aman@network-lab.io</span></div>
+      <div class="line"><span class="out-dim">Connected to network-lab.io · Last login: today</span></div>
+      <div class="blank"></div>
+      <div class="line"><span class="prompt-sym">❯</span><span class="cmd">whoami</span></div>
+      <div class="line"><span class="out-big">Aman Singh</span></div>
+      <div class="line"><span class="out-role">Network Engineer &amp; Automation Specialist</span></div>
+      <div class="blank"></div>
+      <div class="line"><span class="prompt-sym">❯</span><span class="cmd">cat</span>&nbsp;<span class="arg">about.txt</span></div>
+      <div class="line"><span class="out-dim">Building the infrastructure the internet runs on.</span></div>
+      <div class="line"><span class="out-dim">Spine-leaf fabrics · SDN · Network automation · BGP · VXLAN</span></div>
+      <div class="line"><span class="out-dim">BCA (DS+AI) · Completed May 2026 · CCNA in progress</span></div>
+      <div class="blank"></div>
+      <div class="line"><span class="prompt-sym">❯</span><span class="cmd">ls</span>&nbsp;<span class="arg">./projects</span></div>
+      <div class="line"><span class="out-green">network-lab-orchestrator&nbsp;&nbsp;spine-leaf-fabric&nbsp;&nbsp;sdn-load-balancer</span></div>
+      <div class="blank"></div>
+      <div class="line"><span class="prompt-sym">❯</span><span class="cursor"></span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="section-header">
+    <span class="section-num">01.</span>
+    <h2 class="section-title">about_me</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="about-grid">
+    <div class="about-text">
+      <p>Networks are the backbone of everything the modern world depends on — and I want to be one of the people who <span>builds</span> them.</p>
+      <p>I specialise in <span>network automation</span> and <span>data center architecture</span>. I don't just study concepts — I build spine-leaf fabrics, SDN controllers, and automated lab environments from scratch.</p>
+      <p>My goal is to work at the intersection of <span>infrastructure and intelligence</span> — designing networks that are faster, smarter, and more resilient, contributing to systems that power businesses, connect communities, and move society forward.</p>
+      <p>Currently pursuing <span>CCNA</span> certification, reinforcing theory with live Containerlab labs every day.</p>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-num">15+</div>
+        <div class="stat-label">GitHub repos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">3+</div>
+        <div class="stat-label">Major projects</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">BGP</div>
+        <div class="stat-label">Core protocol</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">IaC</div>
+        <div class="stat-label">Automation approach</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section id="skills">
+  <div class="section-header">
+    <span class="section-num">02.</span>
+    <h2 class="section-title">tech_stack</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="skills-grid">
+    <div class="skill-group">
+      <div class="skill-group-title">Networking Protocols</div>
+      <div class="skill-tags">
+        <span class="tag">BGP eBGP/iBGP</span>
+        <span class="tag">OSPF</span>
+        <span class="tag">VXLAN</span>
+        <span class="tag">EVPN</span>
+        <span class="tag">OpenFlow</span>
+        <span class="tag">ECMP</span>
+        <span class="tag">STP</span>
+      </div>
+    </div>
+    <div class="skill-group">
+      <div class="skill-group-title">Automation & IaC</div>
+      <div class="skill-tags">
+        <span class="tag">Ansible</span>
+        <span class="tag">Containerlab</span>
+        <span class="tag">FRRouting</span>
+        <span class="tag">YAML IaC</span>
+        <span class="tag">Docker</span>
+      </div>
+    </div>
+    <div class="skill-group">
+      <div class="skill-group-title">SDN & Virtualisation</div>
+      <div class="skill-tags">
+        <span class="tag">Mininet</span>
+        <span class="tag">Open vSwitch</span>
+        <span class="tag">Faucet</span>
+        <span class="tag">Docker Compose</span>
+      </div>
+    </div>
+    <div class="skill-group">
+      <div class="skill-group-title">Observability</div>
+      <div class="skill-tags">
+        <span class="tag">Prometheus</span>
+        <span class="tag">Grafana</span>
+        <span class="tag">cAdvisor</span>
+      </div>
+    </div>
+    <div class="skill-group">
+      <div class="skill-group-title">Programming</div>
+      <div class="skill-tags">
+        <span class="tag">Python</span>
+        <span class="tag">Bash / Shell</span>
+        <span class="tag">Go (learning)</span>
+      </div>
+    </div>
+    <div class="skill-group">
+      <div class="skill-group-title">OS & Tools</div>
+      <div class="skill-tags">
+        <span class="tag">Kali Linux</span>
+        <span class="tag">Ubuntu</span>
+        <span class="tag">Git</span>
+        <span class="tag">GitHub</span>
+        <span class="tag">VS Code</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROJECTS -->
+<section id="projects">
+  <div class="section-header">
+    <span class="section-num">03.</span>
+    <h2 class="section-title">projects</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="projects-grid">
+
+    <a class="project-card" href="https://github.com/MrWater00/network-lab-orchestrator" target="_blank">
+      <div class="project-top">
+        <span class="project-icon">🔧</span>
+        <span class="project-link-icon">↗</span>
+      </div>
+      <div class="project-name">Network Lab Orchestrator</div>
+      <div class="project-desc">
+        Fully automated IaC platform that deploys, configures, and monitors complete network topologies — routers, switches, and hosts — from a single YAML file. Includes a full Prometheus + Grafana observability stack.
+      </div>
+      <div class="project-footer">
+        <span class="project-tag">Python</span>
+        <span class="project-tag">Ansible</span>
+        <span class="project-tag">Containerlab</span>
+        <span class="project-tag">Prometheus</span>
+        <span class="project-tag">Grafana</span>
+      </div>
+    </a>
+
+    <a class="project-card" href="https://github.com/MrWater00/spine-leaf-fabric" target="_blank">
+      <div class="project-top">
+        <span class="project-icon">🏗️</span>
+        <span class="project-link-icon">↗</span>
+      </div>
+      <div class="project-name">Spine-Leaf Data Center Fabric</div>
+      <div class="project-desc">
+        Production-grade Clos fabric (same architecture as AWS & Google Cloud) — 2 spines, 2 leaf nodes, eBGP underlay with ECMP, VXLAN overlay with BGP EVPN control plane. Eliminates MAC flooding.
+      </div>
+      <div class="project-footer">
+        <span class="project-tag">Shell</span>
+        <span class="project-tag">FRRouting</span>
+        <span class="project-tag">eBGP</span>
+        <span class="project-tag">VXLAN</span>
+        <span class="project-tag">BGP EVPN</span>
+      </div>
+    </a>
+
+    <a class="project-card" href="https://github.com/MrWater00/sdn-load-balancer" target="_blank">
+      <div class="project-top">
+        <span class="project-icon">⚖️</span>
+        <span class="project-link-icon">↗</span>
+      </div>
+      <div class="project-name">SDN Load Balancer</div>
+      <div class="project-desc">
+        Software-defined round-robin load balancer distributing HTTP traffic across 3 backends from a single VIP using programmatic OpenFlow rules. Full IP & MAC rewrite at switch level.
+      </div>
+      <div class="project-footer">
+        <span class="project-tag">Python</span>
+        <span class="project-tag">Mininet</span>
+        <span class="project-tag">Open vSwitch</span>
+        <span class="project-tag">Faucet</span>
+        <span class="project-tag">OpenFlow 1.3</span>
+      </div>
+    </a>
+
+  </div>
+
+  <br/>
+
+  <div class="more-section">
+    <div class="more-title">// more on github</div>
+    <div class="more-list">
+      <a class="more-tag" href="https://github.com/MrWater00/dns-labs" target="_blank">dns-labs</a>
+      <a class="more-tag" href="https://github.com/MrWater00/bgp-labs" target="_blank">bgp-labs</a>
+      <a class="more-tag" href="https://github.com/MrWater00/shadowScan" target="_blank">shadowScan (Go)</a>
+      <a class="more-tag" href="https://github.com/MrWater00/gopherShell" target="_blank">gopherShell (Go)</a>
+      <a class="more-tag" href="https://github.com/MrWater00/HoneyPot" target="_blank">HoneyPot (Python)</a>
+      <a class="more-tag" href="https://github.com/MrWater00/ai-chatbot" target="_blank">ai-chatbot</a>
+      <a class="more-tag" href="https://github.com/MrWater00" target="_blank">→ view all</a>
+    </div>
+  </div>
+</section>
+
+<!-- CERTIFICATIONS (inline before contact) -->
+<section>
+  <div class="section-header">
+    <span class="section-num">04.</span>
+    <h2 class="section-title">certifications</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="cert-card">
+    <div class="cert-badge">🏅</div>
+    <div>
+      <div class="cert-name">Cisco Certified Network Associate (CCNA)</div>
+      <div class="cert-meta">Self-studying · Covering BGP, OSPF, VLANs, STP, ACLs, NAT, network security</div>
+      <div class="cert-meta">Reinforced with live Containerlab + FRRouting labs daily</div>
+      <div><span class="cert-status">⚡ In Progress — 2025/26</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="section-header">
+    <span class="section-num">05.</span>
+    <h2 class="section-title">contact</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="contact-grid">
+    <div>
+      <div class="contact-text">
+        I'm actively looking for <span>network engineering</span> and <span>automation roles</span>.<br/><br/>
+        Whether you're hiring, collaborating, or just want to talk networking — my inbox is open.
+      </div>
+    </div>
+    <div class="contact-links">
+      <a class="contact-link" href="mailto:amansingh15605@gmail.com">
+        <span class="contact-link-icon">✉</span>
+        amansingh15605@gmail.com
+      </a>
+      <a class="contact-link" href="tel:+918953184531">
+        <span class="contact-link-icon">📞</span>
+        +91 89531 84531
+      </a>
+      <a class="contact-link" href="https://github.com/MrWater00" target="_blank">
+        <span class="contact-link-icon">⌥</span>
+        github.com/MrWater00
+      </a>
+      <a class="contact-link" href="Aman_Singh_CV.pdf" target="_blank">
+        <span class="contact-link-icon">↓</span>
+        Download Resume (PDF)
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Designed &amp; built by <span>Aman Singh</span> · Host on GitHub Pages · <span>github.com/MrWater00</span></p>
+</footer>
+
+</body>
+</html>
