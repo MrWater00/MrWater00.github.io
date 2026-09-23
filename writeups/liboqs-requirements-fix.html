@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fixing a broken pip install --require-hashes in liboqs — Aman Singh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c14;
+    --bg-elev: #12151f;
+    --text: #ece9e2;
+    --muted: #7c8088;
+    --accent: #9b8cff;
+    --border: #212433;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Fraunces', Georgia, serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+  }
+  .wrap { max-width: 700px; margin: 0 auto; padding: 60px 24px 90px; }
+
+  nav {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78em;
+    margin-bottom: 56px;
+  }
+  nav a { color: var(--muted); text-decoration: none; }
+  nav a:hover { color: var(--accent); }
+
+  .meta-line {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72em;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .meta-line a { color: var(--accent); text-decoration: none; }
+  .meta-line a:hover { text-decoration: underline; }
+
+  h1 {
+    font-size: 1.9em;
+    font-weight: 500;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    margin-bottom: 40px;
+  }
+
+  h2 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82em;
+    font-weight: 500;
+    color: var(--accent);
+    text-transform: none;
+    margin: 48px 0 16px;
+  }
+
+  p { margin-bottom: 16px; font-size: 1.02em; }
+
+  pre {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82em;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px 18px;
+    overflow-x: auto;
+    margin: 18px 0;
+    line-height: 1.6;
+    color: #cfd3dc;
+  }
+
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg-elev);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.85em;
+    border: 1px solid var(--border);
+  }
+  pre code {
+    background: none;
+    border: none;
+    padding: 0;
+  }
+
+  a { color: var(--accent); }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 40px 0;
+  }
+
+  .outcome {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    padding: 22px;
+    margin-top: 20px;
+  }
+
+  footer {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78em;
+    color: var(--muted);
+    padding-top: 40px;
+    margin-top: 60px;
+    border-top: 1px solid var(--border);
+  }
+  footer a { color: var(--muted); text-decoration: none; }
+  footer a:hover { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <nav><a href="../index.html">&larr; back</a></nav>
+
+  <div class="meta-line">
+    liboqs · <a href="https://github.com/open-quantum-safe/liboqs/issues/2545">issue #2545</a> · <a href="https://github.com/open-quantum-safe/liboqs/pull/2578">PR #2578 — merged</a>
+  </div>
+
+  <h1>Fixing a Broken <code>pip install --require-hashes</code> in liboqs's Root Dependency File</h1>
+
+  <h2>Summary</h2>
+  <p>liboqs's README instructs new contributors to set up their Python tooling with:</p>
+  <pre><code>pip install --require-hashes -r requirements.txt</code></pre>
+  <p>This command failed on a clean checkout. Root cause: <code>requirements.txt</code> was missing a pinned, hashed entry for <code>charset-normalizer</code>, a transitive dependency of <code>requests==2.34.2</code>. A second, related gap existed: <code>requirements.in</code> — the source file the project's own docs describe as the input to <code>requirements.txt</code> — didn't exist in the repository at all.</p>
+
+  <h2>Reproduction</h2>
+  <pre><code>python3 -m venv .venv
+.venv/bin/pip install --require-hashes -r requirements.txt</code></pre>
+  <pre><code>Collecting charset_normalizer&lt;4,&gt;=2 (from requests==2.34.2->-r requirements.txt (line 116))
+ERROR: In --require-hashes mode, all requirements must have their versions pinned with ==. These do not:
+    charset_normalizer&lt;4,&gt;=2 from ...</code></pre>
+  <p>Every other package in the file installed cleanly, each pinned to an exact version with a <code>--hash=sha256:...</code> entry. <code>charset_normalizer</code> was the sole exception — never listed directly in <code>requirements.txt</code>, only pulled in implicitly through <code>requests</code>' own dependency metadata (<code>charset_normalizer&lt;4,&gt;=2</code>, an unpinned range).</p>
+  <p><code>--require-hashes</code> mode rejects any resolved package that isn't explicitly pinned and hashed <em>in the file being installed from</em>, regardless of whether the transitive package itself resolves fine under normal pip. This is by design — the mode exists to guarantee every installed artifact, direct or transitive, is traceable to a reviewed, hash-verified entry.</p>
+
+  <h2>Investigating the deeper gap</h2>
+  <p>The file's own header claimed:</p>
+  <pre><code># Generated by: pip-compile --generate-hashes requirements.in</code></pre>
+  <p><code>requirements.in</code> is meant to be the short, human-edited source file — direct dependencies only, no hashes — that <code>pip-compile</code> (from <code>pip-tools</code>) expands into the full pinned-and-hashed <code>requirements.txt</code>. Checking for it:</p>
+  <pre><code>$ ls requirements.in
+ls: cannot access 'requirements.in': No such file or directory</code></pre>
+  <p>It didn't exist. The project's own <code>docs/PROCEDURES.md</code> documents this exact workflow — update <code>requirements.in</code>, regenerate <code>requirements.txt</code> via <code>pip-compile --generate-hashes</code>, check in both files — but the source file referenced by that workflow, and by the generated file's own header, was missing from the repository.</p>
+
+  <h2>Reconstructing requirements.in</h2>
+  <p>Direct dependencies were identified by checking which packages in <code>requirements.txt</code> had no <code>#&nbsp;via&nbsp;&lt;package&gt;</code> annotation — the convention <code>pip-compile</code> uses to mark a package as pulled in transitively by something else. Four packages had none: <code>pytest</code>, <code>pytest-xdist</code>, <code>pyyaml</code>, <code>requests</code>. These became <code>requirements.in</code>, pinned to their currently-installed versions to avoid an unrelated version bump across the rest of the file:</p>
+  <pre><code>pytest==9.1.1
+pytest-xdist==3.8.0
+pyyaml==6.0.3
+requests==2.34.2</code></pre>
+
+  <h2>Regenerating, and a false alarm</h2>
+  <pre><code>pip-compile --generate-hashes --output-file=requirements.txt requirements.in</code></pre>
+  <p>This resolved and added <code>charset-normalizer==3.5.1</code> with real hashes. However, the recorded command in the output file's own header read:</p>
+  <pre><code>pip-compile --generate-hashes --no-index --output-file=requirements.txt requirements.in</code></pre>
+  <p><code>--no-index</code> was never passed. Initial concern: had <code>pip-compile</code> silently resolved from a stale local cache instead of querying PyPI?</p>
+  <p>Investigation into <code>pip-tools</code>' own behavior clarified this: since every dependency in <code>requirements.in</code> is pinned to an exact version (no ranges), <code>pip-compile</code> has no need to query PyPI's general package index — which exists to answer "what versions satisfy this range." It still made a genuine network call to a separate endpoint, PyPI's JSON API, specifically to fetch the file hashes for each already-known version. <code>--no-index</code> in the header accurately reflects that the version-resolution index was unnecessary, not that no network request occurred.</p>
+  <p>This was independently confirmed: a completely separate resolution, run in an unrelated environment, produced an identical first hash for <code>charset-normalizer==3.5.1</code>:</p>
+  <pre><code>--hash=sha256:00668ebb0609751758682eb0b5857e7c35b9f00e84dfdef062e103244ec94d45</code></pre>
+  <p>Two independent SHA-256 computations matching character-for-character rules out a caching artifact.</p>
+
+  <h2>Keeping the diff minimal</h2>
+  <p>A direct <code>pip-compile</code> regeneration also rewrote the file's original hand-written header (install instructions, a README pointer) with <code>pip-compile</code>'s own generic boilerplate — an unrelated, unnecessary change. Fixed by regenerating with <code>--no-header</code> and restoring the original header manually, verified with:</p>
+  <pre><code>git diff requirements.txt | grep "^-" | grep -v "^---"</code></pre>
+  <p>Empty output confirmed a pure addition: one new dependency block, zero deletions.</p>
+
+  <h2>Verification</h2>
+  <p>Fresh virtual environment, fresh clone state, no cached artifacts:</p>
+  <pre><code>rm -rf .venv
+python3 -m venv .venv
+.venv/bin/pip install --require-hashes -r requirements.txt</code></pre>
+  <pre><code>Successfully installed certifi-2025.6.15 charset-normalizer-3.5.1 execnet-2.1.2
+idna-3.15 iniconfig-2.3.0 packaging-26.2 pluggy-1.6.0 pygments-2.20.0 pytest-9.1.1
+pytest-xdist-3.8.0 pyyaml-6.0.3 requests-2.34.2 urllib3-2.7.0</code></pre>
+
+  <h2>Outcome</h2>
+  <div class="outcome">
+    <p style="margin-bottom:0;">Merged as <a href="https://github.com/open-quantum-safe/liboqs/pull/2578">PR #2578</a> into <code>open-quantum-safe/liboqs:main</code>, approved by two maintainers, 75/75 CI checks passed. Diff: two files, 184 insertions, 0 deletions — <code>requirements.in</code> added, <code>requirements.txt</code> extended with the missing pin.</p>
+  </div>
+
+  <footer>
+    <a href="../index.html">&larr; back to home</a>
+  </footer>
+
+</div>
+
+</body>
+</html>
