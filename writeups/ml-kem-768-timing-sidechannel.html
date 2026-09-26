@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Timing Side-Channel Analysis of ML-KEM-768 in liboqs — Aman Singh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c14;
+    --bg-elev: #12151f;
+    --text: #ece9e2;
+    --muted: #7c8088;
+    --accent: #9b8cff;
+    --accent-dim: #4a4470;
+    --border: #212433;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Fraunces', Georgia, serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+
+  .back {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78em;
+    color: var(--muted);
+    text-decoration: none;
+    margin: 48px 0 28px;
+  }
+  .back:hover { color: var(--accent); }
+
+  .meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78em;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  .meta a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--border); }
+  .meta a:hover { color: var(--accent); border-color: var(--accent-dim); }
+
+  h1 {
+    font-size: 2.3em;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+
+  .field-line {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78em;
+    color: var(--muted);
+    line-height: 1.9;
+    margin: 22px 0 34px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .field-line strong { color: var(--text); font-weight: 500; }
+
+  article { padding-bottom: 60px; }
+  h2 {
+    font-size: 1.25em;
+    font-weight: 500;
+    color: var(--text);
+    margin: 48px 0 16px;
+  }
+  p { margin-bottom: 18px; }
+  p code, li code {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg-elev);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.85em;
+    border: 1px solid var(--border);
+  }
+  ul, ol { margin: 0 0 18px 1.3em; }
+  li { margin-bottom: 8px; }
+
+  pre {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 18px 20px;
+    font-size: 0.82em;
+    line-height: 1.7;
+    overflow-x: auto;
+    margin: 18px 0 24px;
+    color: #c9c6bd;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+    margin: 18px 0 28px;
+  }
+  th, td {
+    text-align: left;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+  }
+  th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78em;
+    color: var(--muted);
+    font-weight: 500;
+    background: var(--bg-elev);
+  }
+
+  footer {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78em;
+    color: var(--muted);
+    padding: 32px 0 60px;
+    border-top: 1px solid var(--border);
+  }
+  footer a { color: var(--muted); text-decoration: none; }
+  footer a:hover { color: var(--accent); }
+
+  @media (max-width: 600px) {
+    h1 { font-size: 1.7em; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <a class="back" href="https://mrwater00.github.io/index.html">← back</a>
+
+  <div class="meta">liboqs · ML-KEM-768 decapsulation · bracketed timing analysis + Valgrind static leak detection</div>
+
+  <h1>Hunting a Timing Side Channel in liboqs's ML-KEM-768 Decapsulation</h1>
+
+  <div class="field-line">
+    <strong>Target:</strong> <code>OQS_KEM_decaps()</code>, ML-KEM-768, liboqs 0.16.0 (commit <code>5a1a854b</code>)<br>
+    <strong>Methods:</strong> bracketed statistical timing analysis · Valgrind-based static leak detection
+  </div>
+
+  <article>
+
+    <h2>Summary</h2>
+    <p>ML-KEM decapsulation is written to run in constant time — no branch, no memory access should ever depend on the secret key, because if one did, an attacker who could time enough decryption attempts could recover the key one bit at a time. The design claim is well documented; whether the compiled binary actually holds to it is a separate question, since a compiler is free to turn careful, branchless C into branching machine code without anyone noticing.</p>
+    <p>This tested that question directly against liboqs's real, compiled ML-KEM-768, using two independent methods — a statistical timing harness against the actual <code>OQS_KEM_decaps()</code> call, and a Valgrind-based static check of the actual machine code — on both the CPU-optimized (AVX2) and portable-C code paths. Neither method found a dependency on secret data in either path. Getting to that answer took building the harness, then fixing three separate bugs in the harness itself that were producing false signals — which turned out to be most of the actual work.</p>
+
+    <h2>Building the timing harness</h2>
+    <p>The approach: call <code>OQS_KEM_decaps()</code> up to a million times, timed with nanosecond precision (<code>CLOCK_MONOTONIC_RAW</code>), randomly split into two classes — say, a valid ciphertext vs. a random invalid one — and compare the two timing distributions with Welch's t-test, the same statistic <code>dudect</code> uses. <code>|t| &gt; 4.5</code> was the alarm threshold.</p>
+    <p>Every real test was bracketed by two controls: a <strong>null control</strong> (both classes statistically identical — should never alarm) and a <strong>positive control</strong> (a small, known artificial delay injected into one class — must alarm, or the session's too noisy to trust). VM timing noise turned out to swing wildly between sessions — the same test could resolve a 5 ns difference one minute and miss a 50 ns one twenty minutes later — so nothing counted as a result unless bracketed by a passing control in the same session.</p>
+
+    <h2>A false alarm, and then a real one</h2>
+    <p>First version of the harness picked each sample's input with an <code>if</code> statement inside the timed loop. The null control started falsely alarming on the noise-cropped data — a tell that something in the harness, not the library, was leaking. Root cause: branch prediction treated the two classes slightly differently before the stopwatch even started. Fixed by precomputing every input and label before the timing loop begins, so the loop body is byte-identical between classes.</p>
+    <p>Second false alarm, later: comparing one fixed, reused ciphertext against ciphertexts pulled from a random pool showed a suspicious ~7 ns gap. Turned out the fixed one stayed hot in CPU cache across every call, while the pooled ones were pulled cold each time — a memory-access artifact with nothing to do with the algorithm. Fixed by drawing both classes from equally sized, equally cold pools.</p>
+    <p>With both fixed, bracketed runs across both code paths came back quiet:</p>
+    <pre>mode=invalid samples=1000000 delay_iters=0 seed=1
+crop @90%:   n0=450328 n1=449672  mean0=65882.4 ns  mean1=65919.9 ns  diff=-37.5 ns  t=-1.50
+crop @75%:   n0=375559 n1=374444  mean0=61177.5 ns  mean1=61169.2 ns  diff=8.3 ns    t=0.84
+max |t| = 1.50 -&gt; no timing difference detected</pre>
+    <p>against a bracketing control, run in the same session, that reliably alarmed at the same scale:</p>
+    <pre>mode=delay samples=1000000 delay_iters=8 seed=1
+crop @75%:   diff=-10.3 ns  t=-62.47
+max |t| = 62.47 -&gt; ALARM: timing difference detected</pre>
+    <p>No timing difference was found above roughly 8 ns, on either the AVX2-optimized backend or a second build forced to the portable-C code path — the exact implementation a compiler is most likely to accidentally branch on.</p>
+
+    <h2>A second method: Valgrind as a leak detector</h2>
+    <p>A stopwatch can only see a difference bigger than the noise. As a second, noise-free check, Valgrind's Memcheck tool was repurposed: mark the secret key <code>undefined</code> via <code>VALGRIND_MAKE_MEM_UNDEFINED</code>, and Valgrind flags any branch or memory address whose outcome depends on it — with no timing involved at all, and no blind spot at the nanosecond scale.</p>
+    <p>The first run produced almost 10,000 warnings. Almost all of them traced through <code>gen_matrix</code>. Digging into ML-KEM-768's secret-key layout explained why: the 2400-byte secret key isn't just the secret math — it embeds a full copy of the public key, required later for the re-encryption check the algorithm does internally. Marking the whole buffer undefined had also poisoned that embedded public data, and matrix generation legitimately reads a public seed sitting inside it. Not a leak — a scoping bug in the check.</p>
+    <table>
+      <tr><th>offset</th><th>length</th><th>contents</th><th>secrecy</th></tr>
+      <tr><td>0</td><td>1152 B</td><td>secret vector s</td><td>secret</td></tr>
+      <tr><td>1152</td><td>1184 B</td><td>embedded copy of pk</td><td>public</td></tr>
+      <tr><td>2336</td><td>32 B</td><td>hash of pk</td><td>public</td></tr>
+      <tr><td>2368</td><td>32 B</td><td>implicit-rejection z</td><td>secret</td></tr>
+    </table>
+    <p>Narrowing the check to only the two genuinely secret regions (<code>s</code> and <code>z</code>) and rerunning:</p>
+    <pre>== positive control: leaky branch on secret bytes ==
+ERROR SUMMARY: 1152 errors from 1 contexts   &lt;- exactly one per byte of s, as expected
+
+== decapsulation, VALID ciphertext ==
+== decapsulation, INVALID ciphertext ==
+ERROR SUMMARY: 0 errors</pre>
+    <p>Zero warnings inside decapsulation, on both builds, while the positive control still correctly fired exactly 1152 times — once per byte of the secret vector it was deliberately made to branch on. That's the control working, and the result being clean, not the check being blind.</p>
+
+    <h2>Limitations</h2>
+    <ul>
+      <li>All timing was run in a VirtualBox VM, not bare metal — the ~8 ns bound is what the noisiest reliable session supported, not a hard floor.</li>
+      <li>One seed of an earlier test showed a ~0.3–0.8 ns hint that didn't reproduce in three follow-up seeds, whose own controls came back weaker than the original run. Inconclusive, not resolved either way.</li>
+      <li>Valgrind catches secret-dependent branches and memory addresses — not a genuinely branchless but variable-latency instruction (the actual mechanism behind real-world bugs like KyberSlash). The timing method is the relevant check for that class, within its own precision limits.</li>
+      <li>One key pair, one compiler (gcc 15.2.0), one CPU family tested.</li>
+    </ul>
+
+    <h2>Outcome</h2>
+    <p>No timing side channel detected in ML-KEM-768 decapsulation, by either method, on either the AVX2-optimized or portable-C code path of liboqs 0.16.0 — with three self-inflicted false alarms found and fixed along the way, each one caught by a control that was doing its job.</p>
+
+  </article>
+
+  <a class="back" href="https://mrwater00.github.io/index.html">← back to home</a>
+
+  <footer style="margin-top:40px;">
+    <a href="https://github.com/MrWater00">github</a> &nbsp;·&nbsp;
+    <a href="https://linkedin.com/in/aman-singh-network-engineer">linkedin</a>
+  </footer>
+
+</div>
+
+</body>
+</html>
