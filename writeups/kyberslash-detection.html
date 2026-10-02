@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catching a reintroduced KyberSlash bug in liboqs with a patched Valgrind — Aman Singh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c14;
+    --bg-elev: #12151f;
+    --text: #ece9e2;
+    --muted: #7c8088;
+    --accent: #9b8cff;
+    --accent-dim: #4a4470;
+    --border: #212433;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Fraunces', Georgia, serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+
+  .back {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78em;
+    color: var(--muted);
+    text-decoration: none;
+    margin-top: 48px;
+  }
+  .back:hover { color: var(--accent); }
+
+  header { margin: 32px 0 56px; }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78em;
+    color: var(--accent);
+    margin-bottom: 18px;
+  }
+  h1 {
+    font-size: 2.1em;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+  }
+  .meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78em;
+    color: var(--muted);
+    margin-top: 16px;
+  }
+
+  article { padding-bottom: 80px; }
+  h2 {
+    font-size: 1.3em;
+    font-weight: 500;
+    margin: 44px 0 16px;
+  }
+  p { margin-bottom: 18px; font-size: 1.02em; }
+  ul, ol { margin: 0 0 18px 1.3em; }
+  li { margin-bottom: 8px; }
+
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg-elev);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.85em;
+    border: 1px solid var(--border);
+  }
+  pre {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    padding: 18px;
+    overflow-x: auto;
+    margin-bottom: 18px;
+  }
+  pre code { border: none; padding: 0; background: none; font-size: 0.82em; line-height: 1.6; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82em;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    text-align: left;
+  }
+  th { color: var(--accent); font-weight: 500; }
+
+  footer {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78em;
+    color: var(--muted);
+    padding: 32px 0 60px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 18px;
+  }
+  footer a { color: var(--muted); text-decoration: none; }
+  footer a:hover { color: var(--accent); }
+
+  @media (max-width: 600px) {
+    h1 { font-size: 1.6em; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back" href="../index.html">&larr; back</a>
+
+  <header>
+    <div class="eyebrow">post-quantum cryptography · september 2026</div>
+    <h1>Catching a KyberSlash-class bug in liboqs ML-KEM-768 with a patched Valgrind</h1>
+    <div class="meta">liboqs · ML-KEM-768 · KyberSlash · Valgrind · timing side channels</div>
+  </header>
+
+  <article>
+    <h2>In plain words</h2>
+    <p>Some CPU instructions take a different amount of time depending on the numbers they're given. Division is the classic one. If a program divides by, or divides something derived from, a secret, then how long the division takes can leak the secret. KyberSlash (2023–24) was exactly this: a plain division in Kyber/ML-KEM code let researchers recover secret keys from timing.</p>
+    <p>This note shows that a patched Valgrind can catch this bug class in a real library, and that it stays quiet on fixed code. I reproduced KyberSlash1 on purpose in a private copy of liboqs, compared it against the unmodified code under identical compiler flags, and the tool flagged the bug in the same function where it was originally found.</p>
+
+    <h2>Background</h2>
+    <p>KyberSlash1 was first noticed by Tamvada, Bhargavan and Kiefer, and independently by Bernstein. KyberSlash2 was found separately by Ravi and Kannwischer. The published paper is Bernstein et al., <em>"KyberSlash: Exploiting secret-dependent division timings in Kyber implementations,"</em> IACR TCHES 2025, issue 2, pp. 209–234.</p>
+    <p>The authors also published a patch adding a new check to Valgrind's Memcheck tool. Stock Memcheck already flags secret data used in branches and memory addresses. The patch adds a third check: a secret value used as an operand of a variable-latency instruction, mainly integer and floating-point division, plus square root and floating-point remainder. It's switched on with <code>--variable-latency-errors=yes</code>.</p>
+
+    <h2>Setup</h2>
+    <ul>
+      <li>OS and hardware: Kali Linux in VirtualBox, Intel i3-8130U</li>
+      <li>Compiler: gcc 15.2.0</li>
+      <li>Library: liboqs 0.16.0 release, ML-KEM-768 from the vendored mlkem-native code</li>
+      <li>Valgrind: patched with the KyberSlash option and division patches, built into its own prefix</li>
+      <li>Builds tested: plain C at <code>-O3</code> (Release), AVX2 with runtime dispatch, and plain C at <code>-Os</code> (MinSizeRel)</li>
+    </ul>
+
+    <h2>Method</h2>
+    <p>The harness is a small C program linked against liboqs. It generates a key pair, then marks only the genuinely secret parts of the secret key as undefined, which Valgrind treats as "secret": the secret vector <code>s</code> and the value <code>z</code>. It runs decapsulation on a valid and a random invalid ciphertext.</p>
+    <p>Two deliberate positive controls run in the same program: a loop that branches on secret bytes, and a loop that divides by a value derived from secret bytes. A quiet result only counts if these controls fire.</p>
+
+    <h2>The compiler finding</h2>
+    <p>The KyberSlash1 rounding step is <code>((u*2 + Q/2) / Q) % 2</code> with Q = 3329. The divisor is a constant, so compilers often replace the division with a multiply. Compiling that one line at five optimization levels and counting real <code>div</code> instructions:</p>
+    <table>
+      <tr><th>Flag</th><th>div instructions</th></tr>
+      <tr><td>-O0</td><td>0</td></tr>
+      <tr><td>-O1</td><td>0</td></tr>
+      <tr><td>-O2</td><td>0</td></tr>
+      <tr><td>-Os</td><td>1</td></tr>
+      <tr><td>-O3</td><td>0</td></tr>
+    </table>
+    <p>The same source line is safe or vulnerable depending on one compiler flag. Correct maths, constant-time behaviour, and compiler output are three separate properties, so the binary that ships is the thing to test. This also explains why the original researchers saw the bug specifically in <code>-Os</code> builds.</p>
+
+    <h2>Results</h2>
+    <table>
+      <tr><th>Build</th><th>Source</th><th>Real div instructions</th><th>Variable-latency warnings inside liboqs</th></tr>
+      <tr><td>Plain C, -O3</td><td>unmodified</td><td>0</td><td>0</td></tr>
+      <tr><td>AVX2, dispatch build</td><td>unmodified</td><td>0</td><td>0</td></tr>
+      <tr><td>Plain C, -Os</td><td>unmodified</td><td>0</td><td>0</td></tr>
+      <tr><td>Plain C, -Os</td><td>KyberSlash1 division put back</td><td>1</td><td>2</td></tr>
+    </table>
+    <p>In every run the deliberate division control was flagged, so the tool was demonstrably active. For the reintroduced bug, the warnings point straight at:</p>
+    <pre><code>Variable-latency instruction operand of size 8 is secret/uninitialised
+   at PQCP_MLKEM_NATIVE_MLKEM768_C_poly_tomsg
+   by PQCP_MLKEM_NATIVE_MLKEM768_C_indcpa_dec
+   by PQCP_MLKEM_NATIVE_MLKEM768_C_dec
+   by main</code></pre>
+    <p><code>poly_tomsg</code> inside decryption is where KyberSlash1 was originally found. The tool located it without being told where to look. The change was one edit in <code>mlk_scalar_compress_d1</code>: the multiply-and-shift code was replaced with the plain division formula, with everything else — compiler, flags — held identical between the fixed and bug builds.</p>
+
+    <h2>Limits</h2>
+    <ul>
+      <li>The tool flags a variable-latency instruction operating on secret data. It does not prove the timing difference is exploitable on a given CPU.</li>
+      <li>One compiler version, one parameter set (ML-KEM-768), one machine.</li>
+      <li>The bug reintroduction was done only on the plain-C <code>-Os</code> build.</li>
+      <li>No timing measurement of the reintroduced bug was taken; this note shows detection, not measured leakage.</li>
+    </ul>
+
+    <h2>Reproducing it</h2>
+    <ol>
+      <li>Get the KyberSlash Valgrind patches, apply them to a matching Valgrind commit, and build into a private prefix.</li>
+      <li>Sanity test: a program that divides by a value from heap memory should be silent normally and flagged with <code>--variable-latency-errors=yes</code>.</li>
+      <li>Build liboqs at the 0.16.0 commit with <code>-DCMAKE_BUILD_TYPE=MinSizeRel</code>, once unmodified and once with the division put back.</li>
+      <li>Link the harness against each build and run it under the patched Valgrind.</li>
+    </ol>
+
+    <h2>Next steps</h2>
+    <p>Run the same A/B test on ML-KEM-512 and 1024 and on ML-DSA signing, try a second library, and add a timing measurement of the reintroduced bug on hardware where the division is known to be variable-latency.</p>
+  </article>
+
+  <footer>
+    <a href="https://github.com/MrWater00">github</a>
+    <a href="https://linkedin.com/in/aman-singh-network-engineer">linkedin</a>
+  </footer>
+</div>
+
+</body>
+</html>
