@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Formally validating liboqs's ML-KEM against FIPS 203 via ACVP — Aman Singh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c14;
+    --bg-elev: #12151f;
+    --text: #ece9e2;
+    --muted: #7c8088;
+    --accent: #9b8cff;
+    --accent-dim: #4a4470;
+    --border: #212433;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Fraunces', Georgia, serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+
+  .back {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78em;
+    color: var(--muted);
+    text-decoration: none;
+    margin-top: 48px;
+  }
+  .back:hover { color: var(--accent); }
+
+  header { margin: 32px 0 56px; }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78em;
+    color: var(--accent);
+    margin-bottom: 18px;
+  }
+  h1 {
+    font-size: 2.1em;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+  }
+  .meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78em;
+    color: var(--muted);
+    margin-top: 16px;
+  }
+
+  article { padding-bottom: 80px; }
+  h2 {
+    font-size: 1.3em;
+    font-weight: 500;
+    margin: 44px 0 16px;
+  }
+  p { margin-bottom: 18px; font-size: 1.02em; }
+  ul, ol { margin: 0 0 18px 1.3em; }
+  li { margin-bottom: 8px; }
+
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg-elev);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.85em;
+    border: 1px solid var(--border);
+  }
+  pre {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    padding: 18px;
+    overflow-x: auto;
+    margin-bottom: 18px;
+  }
+  pre code { border: none; padding: 0; background: none; font-size: 0.82em; line-height: 1.6; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82em;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    text-align: left;
+  }
+  th { color: var(--accent); font-weight: 500; }
+
+  footer {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78em;
+    color: var(--muted);
+    padding: 32px 0 60px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 18px;
+  }
+  footer a { color: var(--muted); text-decoration: none; }
+  footer a:hover { color: var(--accent); }
+
+  @media (max-width: 600px) {
+    h1 { font-size: 1.6em; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back" href="../index.html">&larr; back</a>
+
+  <header>
+    <div class="eyebrow">post-quantum cryptography · october 2026</div>
+    <h1>Formally validating liboqs's ML-KEM against NIST's FIPS 203 via ACVP</h1>
+    <div class="meta">liboqs · ACVP · ML-KEM · FIPS 203 · NIST</div>
+  </header>
+
+  <article>
+    <h2>In plain words</h2>
+    <p>There are two different questions you can ask about a cryptography library: does it leak secrets through timing or other side channels, and does its math actually produce the correct output, exactly as the government standard defines it.</p>
+    <p>My earlier work on liboqs answered the first question, using timing analysis and a patched Valgrind to look for secret-dependent instruction timing, including reproducing the KyberSlash class of bug on purpose to prove the method works.</p>
+    <p>This note answers the second question: I ran liboqs's ML-KEM implementation through NIST's own official correctness test suite and got a passing result, independently confirmed by NIST's server.</p>
+
+    <h2>Background: CAVP and ACVP</h2>
+    <p>NIST's Cryptographic Algorithm Validation Program (CAVP) is how cryptographic implementations get formally certified for US government use. The actual testing mechanism behind CAVP is the Automated Cryptographic Validation Protocol (ACVP): a client authenticates to NIST's server, requests test vectors for a given algorithm, computes the expected outputs using the implementation under test, and submits the answers back for grading.</p>
+    <p>NIST runs a public Demo environment separate from the Production environment used for real certificates. Demo access is free and open to anyone who requests it by email; Production access is restricted to accredited testing laboratories. This work used the Demo environment, so the result is a correctness validation, not an official government certification — but it uses the same protocol, the same server-side grading, and the same official test vectors.</p>
+
+    <h2>Setup</h2>
+    <ul>
+      <li>Client: Cisco's libacvp (v2.3.1), the reference open-source ACVP client, which ships a built-in test harness specifically for liboqs</li>
+      <li>Library under test: liboqs 0.16.0, built fresh as a static library with both ML-KEM and ML-DSA enabled</li>
+      <li>Authentication: a client TLS certificate and private key issued by NIST after a CSR exchange, plus a TOTP seed for two-factor login</li>
+      <li>Server: demo.acvts.nist.gov</li>
+    </ul>
+
+    <h2>Getting the pieces to talk to each other</h2>
+    <p>Two real integration problems came up building this, worth documenting because they're the kind of thing that isn't in anyone's quickstart guide.</p>
+    <p><strong>libacvp's own configure script has an ordering bug.</strong> When liboqs is built as a static library linked against OpenSSL, libacvp's <code>./configure --with-liboqs-dir=...</code> test-links against liboqs before it adds the <code>--with-ssl-dir</code> OpenSSL flags, so the link test fails with undefined OpenSSL symbols even though the right flags were given. The fix is to export <code>LIBS="-lcrypto -lssl -lpthread"</code> before running configure, since the script preserves any pre-existing <code>LIBS</code> value into its own link test.</p>
+    <p><strong>libacvp's liboqs/ML-DSA harness expects a function naming convention liboqs no longer exports.</strong> The harness calls <code>pqcrystals_ml_dsa_44_ref_signature_internal</code> and similar functions, old PQClean-style names. Current liboqs's ML-DSA backend does not export any symbol under either that name or its own internal naming scheme; the deterministic sign/verify functions are compiled as library-internal only. This is a genuine version mismatch between the two projects, not a configuration issue. A small stub file providing those six symbols, returning an error code since they're never meant to be called, satisfies the linker and disables ML-DSA testing in this build while leaving ML-KEM fully functional.</p>
+
+    <h2>Result</h2>
+    <p>A full ACVP test session against the Demo server, registering ML-KEM capabilities for all three parameter sets:</p>
+    <table>
+      <tr><th>Vector set</th><th>Algorithm</th><th>Mode</th><th>Result</th></tr>
+      <tr><td>4071542</td><td>ML-KEM-512 / 768 / 1024</td><td>keyGen</td><td>Pass</td></tr>
+      <tr><td>4071543</td><td>ML-KEM-512 / 768 / 1024</td><td>encapDecap</td><td>Pass</td></tr>
+    </table>
+    <p>Test session ID 774197. The pass result was returned twice independently: once at the end of the live test run, and again on a separate <code>--get_results</code> query against the server afterward, confirming it wasn't just a local cached status.</p>
+    <p>In plain terms: liboqs's key generation, encapsulation, and decapsulation for ML-KEM-512, ML-KEM-768, and ML-KEM-1024 all produce output that exactly matches NIST's official FIPS 203 reference answers.</p>
+
+    <h2>How this fits with the timing work</h2>
+    <p>This result is a different, complementary claim to the side-channel analysis. ACVP validation says the math is correct. It says nothing about whether computing that correct answer takes a secret-dependent amount of time, an implementation can be perfectly ACVP-compliant and still leak keys through timing, which is exactly what the KyberSlash bug class demonstrated. Treating "formally validated" and "side-channel resistant" as the same property is a common mistake; they're orthogonal, and a serious security review needs both.</p>
+
+    <h2>Limits</h2>
+    <ul>
+      <li>Demo environment, not Production — this is a correctness validation exercise, not an official NIST certificate</li>
+      <li>ML-DSA is not covered, due to the libacvp/liboqs symbol mismatch described above</li>
+      <li>One liboqs version (0.16.0), one build configuration (static, OpenSSL backend)</li>
+    </ul>
+
+    <h2>Reproducing it</h2>
+    <ol>
+      <li>Request ACVTS Demo credentials by emailing acvts-demo@nist.gov, generate a CSR, and exchange it through NIST's Secure File Collaboration portal to receive a signed certificate and TOTP seed.</li>
+      <li>Build libacvp against a full liboqs install, exporting <code>LIBS="-lcrypto -lssl -lpthread"</code> before <code>./configure --with-liboqs-dir=&lt;path&gt; --with-libcurl-dir=/usr</code> to work around the linking order issue.</li>
+      <li>Set <code>ACV_SERVER</code>, <code>ACV_CERT_FILE</code>, <code>ACV_KEY_FILE</code>, and <code>ACV_TOTP_SEED</code> (base64, read directly from the seed file) as environment variables.</li>
+      <li>Run <code>acvp_app --ml_kem --sample</code> for a first test session that returns both the vectors and the correct answers together.</li>
+    </ol>
+
+    <h2>Next steps</h2>
+    <p>Extend this to a second library (PQClean's ML-KEM, say) to see whether ACVP validation and my own side-channel method agree or disagree on which implementations are solid. Revisit ML-DSA once liboqs exposes the internal sign/verify entry points libacvp's harness expects, or once libacvp updates its harness to match current liboqs.</p>
+  </article>
+
+  <footer>
+    <a href="https://github.com/MrWater00">github</a>
+    <a href="https://linkedin.com/in/aman-singh-network-engineer">linkedin</a>
+  </footer>
+</div>
+
+</body>
+</html>
