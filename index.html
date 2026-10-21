@@ -2,236 +2,517 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aman Singh — Post-Quantum Cryptography</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aman Singh | Computational neuroscience</title>
+<meta name="description" content="Aman Singh: learning computational neuroscience in the open, currently testing whether quantum states can survive in a warm brain.">
+<meta name="theme-color" content="#EBB04A">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23EBB04A'/%3E%3Cpath d='M16 17 L16 6 M16 17 L8 24 M16 17 L25 23' stroke='%2314100B' stroke-width='2.4' stroke-linecap='round' fill='none'/%3E%3Ccircle cx='16' cy='17' r='4.2' fill='%2314100B'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #0a0c14;
-    --bg-elev: #12151f;
-    --text: #ece9e2;
-    --muted: #7c8088;
-    --accent: #9b8cff;
-    --accent-dim: #4a4470;
-    --border: #212433;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Fraunces', Georgia, serif;
-    background: var(--bg);
-    color: var(--text);
-    line-height: 1.6;
-  }
-  .wrap { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
 
+<style>
+  /* ------------------------------------------------------------------
+     Palette: a Golgi stain. Black silver-chromate cells on a honey field.
+     ------------------------------------------------------------------ */
+  :root {
+    --honey: #EBB04A;
+    --honey-ink: #3B2D14;   /* secondary text on honey */
+    --ink: #14100B;         /* page background, and ink on honey */
+    --ink-raised: #1D1710;
+    --line: #33291B;
+    --bone: #EDE6DA;        /* text on ink */
+    --dim: #A98A52;         /* secondary text on ink */
+    --focus: #FFD98A;
+
+    --display: 'Bricolage Grotesque', 'Avenir Next', 'Segoe UI', system-ui, sans-serif;
+    --text: 'Source Serif 4', Charter, 'Iowan Old Style', Georgia, serif;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--ink);
+    color: var(--bone);
+    font-family: var(--text);
+    font-size: 1.125rem;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, p, ul, ol { margin: 0; padding: 0; }
+  ul, ol { list-style: none; }
+  a { color: inherit; }
+
+  .wrap { width: min(1080px, 100% - 48px); margin-inline: auto; }
+
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+  .hero :focus-visible { outline-color: var(--ink); }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+
+  /* ------------------------------ hero ------------------------------ */
   .hero {
     position: relative;
-    padding: 110px 0 90px;
+    background: var(--honey);
+    color: var(--ink);
     overflow: hidden;
   }
-  .lattice-bg {
-    position: absolute;
-    top: -40px;
-    right: -60px;
-    width: 380px;
-    height: 380px;
-    opacity: 0.5;
-    pointer-events: none;
-  }
-  .hero-inner { position: relative; z-index: 1; }
-  .eyebrow {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.78em;
-    color: var(--accent);
-    margin-bottom: 22px;
-  }
-  h1 {
-    font-size: 3.1em;
-    font-weight: 500;
-    letter-spacing: -0.015em;
-    line-height: 1.12;
-    max-width: 9.5em;
-  }
-  h1 em {
-    font-style: italic;
-    font-weight: 400;
-    color: var(--accent);
-  }
-  .hero-sub {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.88em;
-    color: var(--muted);
-    max-width: 30em;
-    margin-top: 26px;
-    line-height: 1.75;
-  }
-
-  .milestones {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1px;
-    background: var(--border);
-    border: 1px solid var(--border);
-    margin: 70px 0 90px;
-  }
-  .milestone {
-    background: var(--bg);
-    padding: 26px 22px;
-  }
-  .milestone .num {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.72em;
-    color: var(--accent);
-    display: block;
-    margin-bottom: 12px;
-  }
-  .milestone .label {
-    font-size: 1.05em;
-    line-height: 1.4;
-  }
-
-  section { margin-bottom: 64px; }
-  h2 {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.78em;
-    font-weight: 500;
-    color: var(--muted);
-    margin-bottom: 20px;
-  }
-  .entry {
-    display: block;
-    padding: 24px;
-    border: 1px solid var(--border);
-    background: var(--bg-elev);
-    margin-bottom: 14px;
-    text-decoration: none;
-    color: var(--text);
-    transition: border-color 0.15s ease;
-  }
-  .entry:hover { border-color: var(--accent-dim); }
-  .entry-title {
-    font-size: 1.15em;
-    line-height: 1.4;
-    margin-bottom: 8px;
-  }
-  .entry-meta {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.72em;
-    color: var(--muted);
-  }
-  code {
-    font-family: 'JetBrains Mono', monospace;
-    background: var(--bg);
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-size: 0.85em;
-    border: 1px solid var(--border);
-  }
-
-  footer {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.78em;
-    color: var(--muted);
-    padding: 32px 0 60px;
-    border-top: 1px solid var(--border);
+  .top {
     display: flex;
-    gap: 18px;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px 28px;
+    padding-top: 28px;
+    font-family: var(--display);
+    font-size: 1rem;
+    font-weight: 500;
   }
-  footer a { color: var(--muted); text-decoration: none; }
-  footer a:hover { color: var(--accent); }
+  .top .name { font-weight: 800; text-decoration: none; }
+  .top nav { display: flex; flex-wrap: wrap; gap: 6px 26px; }
+  .top nav a { text-decoration-thickness: 1px; text-underline-offset: 5px; }
+  .top nav a:hover { text-decoration-thickness: 2px; }
 
-  @media (max-width: 600px) {
-    h1 { font-size: 2.2em; }
-    .milestones { grid-template-columns: 1fr; }
-    .lattice-bg { width: 220px; height: 220px; top: -20px; right: -40px; }
+  .hero-grid {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+    align-items: end;
+    min-height: clamp(440px, 62vh, 620px);
+  }
+  .hero-copy { padding: clamp(48px, 8vw, 96px) 0 40px; position: relative; z-index: 1; }
+  h1 {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(2.3rem, 5vw, 4rem);
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+  }
+  /* Two sentences, two blocks, each balanced on its own. */
+  h1 span { display: block; text-wrap: balance; }
+  h1 span + span { margin-top: 0.3em; }
+  .lede {
+    margin-top: 28px;
+    max-width: 34em;
+    color: var(--honey-ink);
+    font-size: 1.2rem;
+  }
+
+  #tree {
+    align-self: stretch;
+    justify-self: end;
+    width: 100%;
+    height: 100%;
+    max-height: 640px;
+    fill: none;
+    stroke: var(--ink);
+    stroke-linecap: round;
+    overflow: visible;
+  }
+  #tree .soma { fill: var(--ink); stroke: none; }
+
+  /* ------------------------ the live neuron ------------------------- */
+  .scope { border-top: 1px solid rgba(20, 16, 11, 0.35); }
+  .scope-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 28px;
+    padding: 18px 0 6px;
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: 1rem;
+  }
+  .control { display: flex; align-items: center; gap: 14px; }
+  .control output { min-width: 4.6em; font-family: var(--mono); font-size: 0.9rem; }
+  .readouts { display: flex; flex-wrap: wrap; gap: 4px 28px; margin-left: auto; font-family: var(--mono); font-size: 0.9rem; }
+  .readouts span { white-space: nowrap; }
+
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    width: min(260px, 52vw);
+    height: 28px;
+    background: transparent;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-runnable-track { height: 2px; background: var(--ink); }
+  input[type="range"]::-moz-range-track { height: 2px; background: var(--ink); }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 20px; height: 20px; margin-top: -9px;
+    border-radius: 50%; background: var(--ink); border: 0;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 20px; height: 20px; border-radius: 50%; background: var(--ink); border: 0;
+  }
+
+  #scope { display: block; width: 100%; height: clamp(150px, 24vh, 230px); }
+  .scope-note {
+    padding: 4px 0 18px;
+    font-size: 0.9rem;
+    color: var(--honey-ink);
+  }
+
+  /* ----------------------------- content ---------------------------- */
+  .band { padding: clamp(64px, 10vw, 128px) 0; }
+  .band + .band { border-top: 1px solid var(--line); }
+
+  h2 {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(2rem, 4.4vw, 3.4rem);
+    line-height: 1.04;
+    letter-spacing: -0.03em;
+    max-width: 14em;
+  }
+  h3 {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 1.35rem;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+  .sub {
+    margin-top: clamp(48px, 7vw, 80px);
+    margin-bottom: 8px;
+    color: var(--dim);
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: 1.05rem;
+  }
+  .measure { max-width: 38em; }
+
+  .facts { margin-top: 36px; max-width: 44em; }
+  .facts li { padding: 14px 0; border-top: 1px solid var(--line); }
+  .facts li:last-child { border-bottom: 1px solid var(--line); }
+
+  .rows a {
+    display: block;
+    padding: 22px 0;
+    border-top: 1px solid var(--line);
+    text-decoration: none;
+    transition: padding-left 0.18s ease;
+  }
+  .rows li:last-child a { border-bottom: 1px solid var(--line); }
+  .rows a:hover, .rows a:focus-visible { padding-left: 14px; }
+  .rows a:hover h3, .rows a:focus-visible h3 { color: var(--honey); }
+  .rows .meta { display: block; margin-top: 6px; color: var(--dim); font-size: 0.95rem; }
+
+  .flag { font-family: var(--mono); font-size: 0.85em; white-space: nowrap; }
+  @media (max-width: 400px) { .flag { white-space: normal; overflow-wrap: anywhere; } }
+
+  .caveat-line { color: var(--dim); font-size: 1rem; }
+  .intro { margin-top: 28px; }
+  .intro + .intro { margin-top: 16px; }
+
+  /* The learning path is a sequence, drawn as an axon with nodes. */
+  .axon { position: relative; margin-top: 56px; padding-left: 52px; max-width: 46em; }
+  .axon::before {
+    content: ""; position: absolute; left: 9px; top: 12px; bottom: 12px;
+    width: 1px; background: var(--line);
+  }
+  .axon li { position: relative; padding-bottom: 44px; }
+  .axon li:last-child { padding-bottom: 0; }
+  .axon li::before {
+    content: ""; position: absolute; left: -52px; top: 5px;
+    width: 19px; height: 19px; border-radius: 50%;
+    border: 2px solid var(--honey); background: var(--ink);
+  }
+  .axon li[data-status="done"]::before { background: var(--honey); }
+  .axon li[data-status="idea"]::before { border-style: dashed; border-color: var(--dim); }
+  .axon .status { margin-left: 10px; color: var(--honey); font-family: var(--text); font-style: italic; font-weight: 400; font-size: 1rem; letter-spacing: 0; }
+  .axon li[data-status="idea"] .status { color: var(--dim); }
+  .axon p { margin-top: 8px; max-width: 36em; }
+  .axon .caveat { color: var(--dim); font-size: 1rem; }
+  .axon a.out { display: inline-block; margin-top: 10px; text-underline-offset: 4px; }
+
+  footer { border-top: 1px solid var(--line); padding: 36px 0 64px; color: var(--dim); font-size: 1rem; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 28px; }
+  footer a { text-underline-offset: 4px; }
+  footer a:hover { color: var(--honey); }
+  footer .sig { margin-left: auto; }
+
+  /* ----------------------------- narrow ----------------------------- */
+  @media (max-width: 760px) {
+    body { font-size: 1.05rem; }
+    .hero-grid { grid-template-columns: 1fr; min-height: 0; }
+    #tree {
+      position: absolute; right: -12%; top: 0; width: 100%; height: 100%;
+      opacity: 0.13; pointer-events: none;
+    }
+    .hero-copy { padding-top: 48px; }
+    .control { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; width: 100%; }
+    .control label { white-space: nowrap; }
+    .control input[type="range"] { width: 100%; min-width: 0; }
+    .readouts { margin-left: 0; }
+    .axon { padding-left: 40px; }
+    .axon::before { left: 7px; }
+    .axon li::before { left: -40px; width: 15px; height: 15px; top: 7px; }
+    footer .sig { margin-left: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .rows a { transition: none; }
   }
 </style>
 </head>
+
 <body>
 
-<div class="wrap">
+<header class="hero" id="top">
+  <div class="top wrap">
+    <a class="name" href="#top">Aman Singh</a>
+    <nav aria-label="Sections">
+      <a href="#completed">Projects</a>
+      <a href="https://github.com/MrWater00">GitHub</a>
+      <a href="https://linkedin.com/in/aman-singh-network-engineer">LinkedIn</a>
+    </nav>
+  </div>
 
-  <div class="hero">
-    <svg class="lattice-bg" viewBox="0 0 380 380" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <pattern id="dots" width="38" height="38" patternUnits="userSpaceOnUse">
-          <circle cx="2" cy="2" r="2" fill="#9b8cff" opacity="0.55"/>
-        </pattern>
-      </defs>
-      <rect width="380" height="380" fill="url(#dots)"/>
-      <line x1="40" y1="40" x2="154" y2="116" stroke="#9b8cff" stroke-width="1" opacity="0.3"/>
-      <line x1="154" y1="116" x2="192" y2="230" stroke="#9b8cff" stroke-width="1" opacity="0.3"/>
-      <line x1="192" y1="230" x2="306" y2="192" stroke="#9b8cff" stroke-width="1" opacity="0.3"/>
-      <line x1="78" y1="268" x2="192" y2="230" stroke="#9b8cff" stroke-width="1" opacity="0.3"/>
-      <line x1="154" y1="116" x2="268" y2="78" stroke="#9b8cff" stroke-width="1" opacity="0.3"/>
-      <circle cx="40" cy="40" r="4" fill="#9b8cff"/>
-      <circle cx="154" cy="116" r="4" fill="#9b8cff"/>
-      <circle cx="192" cy="230" r="4" fill="#9b8cff"/>
-      <circle cx="306" cy="192" r="4" fill="#9b8cff"/>
-      <circle cx="78" cy="268" r="4" fill="#9b8cff"/>
-      <circle cx="268" cy="78" r="4" fill="#9b8cff"/>
-    </svg>
+  <div class="hero-grid wrap">
+    <div class="hero-copy">
+      <h1><span>Computational neuroscience.</span> <span>The brain, read with code.</span></h1>
+      <p class="lede">Neurons compute with tiny electrical signals. Computational neuroscience uses math and code to read those signals and to rebuild the cells that make them.</p>
+    </div>
+    <svg id="tree" viewBox="0 0 640 720" preserveAspectRatio="xMaxYMax meet" aria-hidden="true" focusable="false"></svg>
+  </div>
 
-    <div class="hero-inner">
-      <div class="eyebrow">post-quantum cryptography</div>
-      <h1>Building toward <em>defense-grade</em> cryptographic research</h1>
-      <div class="hero-sub">
-        crypto-agility audits · hybrid PQC deployment · open-source contribution · side-channel implementation security
+  <div class="scope">
+    <div class="scope-bar wrap">
+      <div class="control">
+        <label for="cur">Input current</label>
+        <input id="cur" type="range" min="0" max="4" step="0.05" value="2.2">
+        <output id="curOut" for="cur">2.2 nA</output>
+      </div>
+      <div class="readouts" aria-live="off">
+        <span>membrane <b id="vm">-65.0</b> mV</span>
+        <span><b id="rate">0</b> spikes per second</span>
       </div>
     </div>
+    <canvas id="scope" role="img" aria-label="Live trace of the membrane voltage of a simulated neuron. The voltage climbs toward a threshold, the neuron fires a spike, and the cycle repeats faster when the input current is raised."></canvas>
+    <p class="scope-note wrap">A simulated leaky integrate-and-fire neuron, running in your browser. The dashed line is its firing threshold (-50 mV) and the solid line is its resting voltage (-65 mV). Move the slider to change how hard it is driven. This is a model, not recorded data.</p>
   </div>
+</header>
 
-  <div class="milestones">
-    <div class="milestone">
-      <span class="num">01</span>
-      <div class="label">Merged a fix into liboqs, the reference post-quantum crypto library</div>
-    </div>
-    <div class="milestone">
-      <span class="num">02</span>
-      <div class="label">Deployed a real hybrid TLS 1.3 handshake with X25519MLKEM768</div>
-    </div>
-    <div class="milestone">
-      <span class="num">03</span>
-      <div class="label">Built lattice cryptography from LWE through Module-LWE by hand</div>
-    </div>
-  </div>
+<main>
+  <section class="band" id="completed">
+    <div class="wrap">
+      <h2>Completed project: how the brain responds to sounds and pictures</h2>
+      <p class="intro measure">A full EEG analysis in Python with MNE: load a real recording, clean it, cut it into short windows around each sound and picture, average the windows, and test whether the two responses differ.</p>
 
-  <section>
-    <h2>writeups</h2>
-    <a class="entry" href="writeups/ml-kem-768-timing-sidechannel.html">
-  <div class="entry-title">Hunting a timing side channel in liboqs's ML-KEM-768 decapsulation</div>
-  <div class="entry-meta">liboqs · ML-KEM-768 · timing analysis · Valgrind</div>
-</a>
-    <a class="entry" href="writeups/liboqs-requirements-fix.html">
-      <div class="entry-title">Fixing a broken <code>pip install --require-hashes</code> in liboqs's root dependency file</div>
-      <div class="entry-meta">liboqs · dependency resolution · pip-tools</div>
-    </a>
-    <a class="entry" href="writeups/liboqs-acvp-validation.html">
-  <div class="entry-title">Formally validating liboqs's ML-KEM against NIST's FIPS 203 via ACVP</div>
-  <div class="entry-meta">liboqs · ACVP · ML-KEM · FIPS 203 · NIST</div>
-</a>
-    <a class="entry" href="writeups/kyberslash-detection.html">
-  <div class="entry-title">Catching a KyberSlash-class bug in liboqs ML-KEM-768 with a patched Valgrind</div>
-  <div class="entry-meta">liboqs · ML-KEM-768 · KyberSlash · Valgrind · timing side channels</div>
-</a>
+      <ul class="facts measure">
+        <li>The sound response peaks near 97 ms. The picture response peaks later, near 187 ms.</li>
+        <li>The scalp pattern flips between the two: sounds are negative over the upper-central scalp, pictures are positive toward the front.</li>
+        <li>A test that shuffles the labels 5000 times found the difference in the 150 to 220 ms window unlikely to be chance (p &lt; 0.001).</li>
+      </ul>
+
+      <p class="intro measure caveat-line">One person, 20 seconds, 11 windows per condition, and the analysis window was chosen after looking at the data, so the p-value is optimistic. The write-up lists every limit.</p>
+      <p class="intro"><a class="out" href="https://github.com/MrWater00/eeg-erp-analysis">Code and write-up on GitHub</a></p>
+    </div>
   </section>
 
-  <section>
-    <h2>open source</h2>
-    <a class="entry" href="https://github.com/open-quantum-safe/liboqs/pull/2578">
-      <div class="entry-title">liboqs PR #2578 — merged</div>
-      <div class="entry-meta">fixed a missing dependency hash blocking fresh installs</div>
-    </a>
+  <section class="band" id="project">
+    <div class="wrap">
+      <h2>Current project: can a quantum state survive in a warm brain?</h2>
+      <p class="intro measure">Some researchers suggest that quantum effects inside neurons help produce consciousness. Others say the brain is too warm and wet for a quantum state to last long enough to matter. I'm testing that question with a simulation on an ordinary computer: one quantum bit, a warm environment around it, and a measurement of how fast it loses its quantum behavior, compared with how fast neurons work.</p>
+      <p class="intro measure caveat-line">In progress. There are no results yet. Quantum consciousness is not established science.</p>
+    </div>
   </section>
+</main>
 
-  <footer>
-    <a href="https://github.com/MrWater00">github</a>
-    <a href="https://linkedin.com/in/aman-singh-network-engineer">linkedin</a>
-  </footer>
+<footer>
+  <div class="wrap">
+    <a href="https://github.com/MrWater00">GitHub</a>
+    <a href="https://linkedin.com/in/aman-singh-network-engineer">LinkedIn</a>
+    <span class="sig">Aman Singh, 2026</span>
+  </div>
+</footer>
 
-</div>
+<script>
+(() => {
+  'use strict';
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  /* ---------------------------------------------------------------
+     1. A dendritic tree, grown once on load.
+     Seeded, so the same neuron appears every visit.
+     --------------------------------------------------------------- */
+  const svg = document.getElementById('tree');
+  const NS = 'http://www.w3.org/2000/svg';
+
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const rand = mulberry32(20261021);
+  const paths = [];
+
+  function branch(x, y, angle, len, width, depth) {
+    const x2 = x + Math.cos(angle) * len;
+    const y2 = y + Math.sin(angle) * len;
+    const bend = (rand() - 0.5) * len * 0.5;
+    const cx = (x + x2) / 2 - Math.sin(angle) * bend;
+    const cy = (y + y2) / 2 + Math.cos(angle) * bend;
+    const p = document.createElementNS(NS, 'path');
+    p.setAttribute('d', `M${x.toFixed(1)} ${y.toFixed(1)} Q${cx.toFixed(1)} ${cy.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}`);
+    p.setAttribute('stroke-width', width.toFixed(2));
+    p.dataset.depth = depth;
+    svg.appendChild(p);
+    paths.push(p);
+    if (depth >= 6) return;
+    const kids = rand() < 0.18 ? 3 : 2;
+    for (let k = 0; k < kids; k++) {
+      if (depth >= 3 && rand() < 0.14) continue;
+      const spread = (k - (kids - 1) / 2) * (0.5 + rand() * 0.35) + (rand() - 0.5) * 0.25;
+      branch(x2, y2, angle + spread, len * (0.76 + rand() * 0.1), Math.max(width * 0.72, 0.7), depth + 1);
+    }
+  }
+
+  const somaX = 400, somaY = 690;
+  [-2.1, -1.75, -1.4, -1.05].forEach(a => branch(somaX, somaY, a, 112, 3.6, 0));
+  const soma = document.createElementNS(NS, 'circle');
+  soma.setAttribute('class', 'soma');
+  soma.setAttribute('cx', somaX); soma.setAttribute('cy', somaY); soma.setAttribute('r', 13);
+  svg.appendChild(soma);
+
+  if (!reduceMotion) {
+    soma.style.opacity = '0';
+    soma.style.transition = 'opacity .5s ease';
+    paths.forEach(p => {
+      const L = p.getTotalLength();
+      p.style.strokeDasharray = L;
+      p.style.strokeDashoffset = L;
+    });
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      soma.style.opacity = '1';
+      paths.forEach(p => {
+        const d = +p.dataset.depth;
+        p.style.transition = `stroke-dashoffset .6s cubic-bezier(.2,.7,.2,1) ${(0.35 + d * 0.3 + rand() * 0.15).toFixed(2)}s`;
+        p.style.strokeDashoffset = 0;
+      });
+    }));
+  }
+
+  /* ---------------------------------------------------------------
+     2. A leaky integrate-and-fire neuron with noisy input.
+        dv/dt = ( -(v - v_rest) + R*I ) / tau
+     --------------------------------------------------------------- */
+  const cv = document.getElementById('scope');
+  const ctx = cv.getContext('2d');
+  const slider = document.getElementById('cur');
+  const curOut = document.getElementById('curOut');
+  const vmEl = document.getElementById('vm');
+  const rateEl = document.getElementById('rate');
+
+  const P = { vRest: -65, vTh: -50, vReset: -65, tau: 20, R: 10, refrac: 2, sigma: 0.9, dt: 0.5, windowMs: 400 };
+  const N = Math.round(P.windowMs / P.dt);
+  const buf = new Float32Array(N).fill(P.vRest);
+  let head = 0, v = P.vRest, refLeft = 0, simT = 0, current = +slider.value;
+  let spikes = [];
+
+  function gauss() { let s = 0; for (let i = 0; i < 12; i++) s += Math.random(); return s - 6; }
+
+  function step() {
+    let out;
+    if (refLeft > 0) {
+      refLeft -= P.dt; v = P.vReset; out = P.vReset;
+    } else {
+      v += P.dt * (-(v - P.vRest) + P.R * current) / P.tau + P.sigma * Math.sqrt(P.dt) * gauss();
+      if (v >= P.vTh) { out = 30; v = P.vReset; refLeft = P.refrac; spikes.push(simT); }
+      else out = v;
+    }
+    simT += P.dt;
+    buf[head] = out;
+    head = (head + 1) % N;
+  }
+
+  let W = 0, H = 0, dpr = 1;
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = cv.clientWidth; H = cv.clientHeight;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  const V_MIN = -80, V_MAX = 36, PAD = 14;
+  const yOf = mv => H - PAD - (mv - V_MIN) / (V_MAX - V_MIN) * (H - 2 * PAD);
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(20,16,11,.4)';
+    ctx.setLineDash([4, 5]);
+    const yT = Math.round(yOf(P.vTh)) + 0.5;
+    ctx.beginPath(); ctx.moveTo(0, yT); ctx.lineTo(W, yT); ctx.stroke();
+    ctx.setLineDash([]);
+    const yR = Math.round(yOf(P.vRest)) + 0.5;
+    ctx.beginPath(); ctx.moveTo(0, yR); ctx.lineTo(W, yR); ctx.stroke();
+
+    ctx.strokeStyle = '#14100B';
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    for (let i = 0; i < N; i++) {
+      const x = i / (N - 1) * W;
+      const y = yOf(buf[(head + i) % N]);
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  function pruneSpikes() { while (spikes.length && spikes[0] < simT - 1000) spikes.shift(); }
+  function readout() {
+    pruneSpikes();
+    vmEl.textContent = v.toFixed(1);
+    rateEl.textContent = spikes.length;
+  }
+
+  let running = false, last = 0, acc = 0, lastReadout = 0;
+  function frame(now) {
+    if (!running) return;
+    acc += Math.min(now - last, 100); last = now;
+    let n = 0;
+    while (acc >= P.dt && n < 400) { step(); acc -= P.dt; n++; }
+    draw();
+    if (now - lastReadout > 150) { readout(); lastReadout = now; }
+    requestAnimationFrame(frame);
+  }
+  function start() { if (running || reduceMotion) return; running = true; last = performance.now(); requestAnimationFrame(frame); }
+  function stop() { running = false; }
+
+  function staticRender() {
+    buf.fill(P.vRest); head = 0; v = P.vRest; refLeft = 0; simT = 0; spikes = [];
+    for (let i = 0; i < 2000; i++) step();
+    draw(); readout();
+  }
+
+  slider.addEventListener('input', () => {
+    current = +slider.value;
+    curOut.textContent = current.toFixed(1) + ' nA';
+    if (reduceMotion) staticRender();
+  });
+
+  window.addEventListener('resize', () => { resize(); draw(); });
+  resize();
+
+  if (reduceMotion) {
+    staticRender();
+  } else {
+    for (let i = 0; i < N; i++) step();   // start with a full trace
+    draw(); readout();
+    const hero = document.querySelector('.hero');
+    new IntersectionObserver(entries => entries[0].isIntersecting ? start() : stop(), { threshold: 0 }).observe(hero);
+    document.addEventListener('visibilitychange', () => document.hidden ? stop() : start());
+  }
+})();
+</script>
 </body>
 </html>
