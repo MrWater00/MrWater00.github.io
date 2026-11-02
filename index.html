@@ -396,7 +396,7 @@
   <section class="band" id="projects">
     <div class="wrap">
       <h2>Projects</h2>
-      <p class="intro measure">Six projects on real brain data and simulations. Each one states its question before the result and its limits after it. Open a card for the full story.</p>
+      <p class="intro measure">Seven projects on real brain data and simulations. Each one states its question before the result and its limits after it. Open a card for the full story.</p>
 
       <div class="grid">
 
@@ -468,6 +468,17 @@
           <p class="stat-label">Two recording sessions each, three ways of testing. No results yet.</p>
           <p class="tags">MOABB · CSP + LDA · EEGNet</p>
           <div class="card-foot"><span class="more" aria-hidden="true">Read more →</span></div>
+        </article>
+
+        <!-- 07 -->
+        <article class="card" data-status="done">
+          <div class="card-top"><span>07</span><span class="pill">Finished</span></div>
+          <h3><button class="card-open" type="button" data-open="project-fly">A simulated fly brain, from its wiring diagram</button></h3>
+          <p class="ask">If the sugar-sensing neurons are switched on, does the tongue motor neuron fire, and is it the wiring that does it?</p>
+          <p class="stat">83 runs</p>
+          <p class="stat-label">Real wiring drove the motor neuron every time. Shuffled wiring never did.</p>
+          <p class="tags">Brian2 · FlyWire connectome · controls</p>
+          <div class="card-foot"><span class="more" aria-hidden="true">Read more →</span><a href="https://github.com/MrWater00/fly-taste-circuit">Code ↗</a></div>
         </article>
 
       </div>
@@ -658,7 +669,37 @@
     <p class="note">Nine people is a small sample, so results will carry wide uncertainty.</p>
   </div>
 </dialog>
+<dialog class="project" id="project-fly" aria-labelledby="t-fly">
+  <div class="dlg-bar"><span>Project 07 · Finished</span><button class="dlg-close" type="button">Close</button></div>
+  <div class="dlg-body">
+    <h3 id="t-fly">A simulated fly brain, from its wiring diagram</h3>
+    <p class="lead">A connectome is a map of which neuron connects to which. I turned the public fruit fly map into a simulation and asked whether the wiring alone is enough to make a motor neuron respond to sugar.</p>
 
+    <h4>The question</h4>
+    <p>When the 32 sugar-sensing neurons are switched on, do the two motor neurons that extend the fly's tongue (MN9) fire, and is that because of the real wiring? There is no direct connection from the sugar neurons to MN9 in the data, so the signal has to pass through other neurons first.</p>
+
+    <h4>What I did</h4>
+    <ul class="list">
+      <li>Built a table of 14.3 million signed connections between 139,255 neurons from the FlyWire connectome. The sign (go or stop) comes from each neuron's predicted transmitter, and the strength from the number of synapses.</li>
+      <li>Simulated every neuron as a leaky integrate-and-fire cell in Brian2: signals fill it up, it slowly leaks, and it fires when it passes a line. Parameters follow papers that describe the Shiu et al. 2024 model.</li>
+      <li>Wrote the design, the controls and the rule for calling a result before running the full experiment.</li>
+      <li>Ran 83 simulations of one second each: the real sugar stimulus, 32 random sensory neurons, shuffled wiring (same connection strengths, targets scrambled), only the 24 acetylcholine sugar neurons, and a no-stimulus check.</li>
+    </ul>
+
+    <h4>What I found</h4>
+    <ul class="list found">
+      <li>With the sugar neurons on, MN9 fired in all 20 runs. With no stimulus it never fired.</li>
+      <li>With 32 random sensory neurons on, MN9 was almost silent (about 3 Hz on average, at most 69 Hz). With shuffled wiring it never fired, in all 20 runs. Every real run was above every control run.</li>
+      <li>So in this model the specific wiring carries the effect, not just the connection strengths.</li>
+    </ul>
+
+    <h4>Limits</h4>
+    <p class="note">The firing rates are not realistic (about 287 Hz in the model), so only the comparisons mean something. It is one fly brain, the connection strengths are guessed from synapse counts, MN9 is identified by a name match, and the random control is weak because many random neurons were visual. This is not a reproduction of the published paper.</p>
+
+    <div class="links"><a href="https://github.com/MrWater00/fly-taste-circuit">Code and write-up on GitHub ↗</a></div>
+  </div>
+</dialog>
+  
 <footer>
   <div class="wrap">
     <a href="https://github.com/MrWater00">GitHub</a>
