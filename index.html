@@ -396,7 +396,7 @@
   <section class="band" id="projects">
     <div class="wrap">
       <h2>Projects</h2>
-      <p class="intro measure">Seven projects on real brain data and simulations. Each one states its question before the result and its limits after it. Open a card for the full story.</p>
+      <p class="intro measure">Eight projects on real brain data and simulations. Each one states its question before the result and its limits after it. Open a card for the full story.</p>
 
       <div class="grid">
 
@@ -481,6 +481,18 @@
           <div class="card-foot"><span class="more" aria-hidden="true">Read more →</span><a href="https://github.com/MrWater00/fly-taste-circuit">Code ↗</a></div>
         </article>
 
+        
+        <!-- 08 -->
+        <article class="card" data-status="done">
+          <div class="card-top"><span>08</span><span class="pill">Finished</span></div>
+          <h3><button class="card-open" type="button" data-open="project-spectrogram">When does each frequency appear?</button></h3>
+          <p class="ask">A spectrogram tool, tested on a signal with a known answer and then on a real terahertz recording.</p>
+          <p class="stat">16×</p>
+          <p class="stat-label">Wavelet timing is 16 times sharper than the STFT at 200 Hz, and its frequency is 17 times blurrier.</p>
+          <p class="tags">SciPy · PyWavelets · THz time-domain data</p>
+          <div class="card-foot"><span class="more" aria-hidden="true">Read more →</span><a href="https://github.com/MrWater00/spectrogram-lab">Code ↗</a></div>
+        </article>
+        
       </div>
 
       <p class="next measure">Next in line: sleep staging that is tested on people the model has never seen, a live pipeline that replays a recording, and a pretrained EEG model compared with a classical baseline.</p>
@@ -697,6 +709,39 @@
     <p class="note">The firing rates are not realistic (about 287 Hz in the model), so only the comparisons mean something. It is one fly brain, the connection strengths are guessed from synapse counts, MN9 is identified by a name match, and the random control is weak because many random neurons were visual. This is not a reproduction of the published paper.</p>
 
     <div class="links"><a href="https://github.com/MrWater00/fly-taste-circuit">Code and write-up on GitHub ↗</a></div>
+  </div>
+</dialog>
+
+<dialog class="project" id="project-spectrogram" aria-labelledby="t-spectrogram">
+  <div class="dlg-bar"><span>Project 08 · Finished</span><button class="dlg-close" type="button">Close</button></div>
+  <div class="dlg-body">
+    <h3 id="t-spectrogram">When does each frequency appear?</h3>
+    <p class="lead">A tool that shows how the frequency content of a signal changes over time, built two ways and checked against a signal with a known answer before it touched real data.</p>
+
+    <h4>The question</h4>
+    <p>Does my tool show the right frequency at the right time, and how does the choice of window change what it can see? The project started from claims that microtubules vibrate from kilohertz up to terahertz. Those claims are not established, and I found no public raw recording of them. So this tests the tool, not the claims.</p>
+
+    <h4>What I did</h4>
+    <ul class="list">
+      <li>Built a fake signal: 50 Hz for two seconds, then 200 Hz for two seconds. I wrote the pass rule first: peak frequencies within 5%, switch time within one window length.</li>
+      <li>Computed a spectrogram with the short-time Fourier transform (STFT), which slides one window along the signal, and with a wavelet transform, which uses longer windows for slow waves and shorter ones for fast waves.</li>
+      <li>Measured the blur of each method in time and in frequency, not just by eye.</li>
+      <li>Repeated the analysis on a real terahertz time-domain waveform (the dry-air baseline run) with a new rule written before looking: the strongest moment must fall within one window length of the largest sample.</li>
+    </ul>
+
+    <h4>What I found</h4>
+    <ul class="list found">
+      <li>Both methods found the right frequencies on the fake signal. Errors: 1.6% and 0.4% for the STFT, 2.8% and 2.0% for the wavelet.</li>
+      <li>The STFT blur is the same everywhere: 0.178 s and 5.1 Hz. The wavelet blur changes with frequency: 0.044 s and 21.6 Hz at 50 Hz, 0.011 s and 86.2 Hz at 200 Hz.</li>
+      <li>Time blur times frequency blur stays near 0.9 to 0.95 for both. You can move the blur between time and frequency, not remove it. Neither method is better.</li>
+      <li>On the real recording the pulse peaks at about 0.6 to 1 THz, with a usable range of about 0.2 to 4 THz. The strongest moment was found within 0.53 ps for three STFT windows and within 0.07 ps for the wavelet.</li>
+      <li>A weak feature at 50 to 65 ps sits about 35 to 41 dB below the main pulse in both methods. Its origin was not investigated.</li>
+    </ul>
+
+    <h4>Limits</h4>
+    <p class="note">No microtubule data was analysed. One recording, one run, no repeats. The file does not state its time unit, so picoseconds is an assumption, supported by the delay of the pellet pulses. Window sizes and the wavelet were chosen, not tuned. The 0.011 s timing is measured at 1 ms steps, so it is uncertain by roughly 10%. A sharp notch near 4.4 THz is not interpreted. Data: Leung, Ward-Berry, Wanvig i Dot, Lee and Zeitler, University of Cambridge, CC BY 4.0.</p>
+
+    <div class="links"><a href="https://github.com/MrWater00/spectrogram-lab">Code and write-up on GitHub ↗</a></div>
   </div>
 </dialog>
   
