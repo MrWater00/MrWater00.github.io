@@ -396,7 +396,7 @@
   <section class="band" id="projects">
     <div class="wrap">
       <h2>Projects</h2>
-      <p class="intro measure">Eight projects on real brain data and simulations. Each one states its question before the result and its limits after it. Open a card for the full story.</p>
+      <p class="intro measure">Nine projects on real brain data and simulations. Each one states its question before the result and its limits after it. Open a card for the full story.</p>
 
       <div class="grid">
 
@@ -491,6 +491,18 @@
           <p class="stat-label">Wavelet timing is 16 times sharper than the STFT at 200 Hz, and its frequency is 17 times blurrier.</p>
           <p class="tags">SciPy · PyWavelets · THz time-domain data</p>
           <div class="card-foot"><span class="more" aria-hidden="true">Read more →</span><a href="https://github.com/MrWater00/spectrogram-lab">Code ↗</a></div>
+        </article>
+
+        
+        <!-- 09 -->
+        <article class="card" data-status="done">
+          <div class="card-top"><span>09</span><span class="pill">Finished</span></div>
+          <h3><button class="card-open" type="button" data-open="project-microtubule">How sharp must a hidden rhythm be to be found?</button></h3>
+          <p class="ask">A classifier, tested on simulated resonance peaks buried in noise, to find where it stops working.</p>
+          <p class="stat">4× sharper</p>
+          <p class="stat-label">How much sharper the ordered peaks had to be before a classifier scored above 90% (noise level 5). At equal sharpness it guessed.</p>
+          <p class="tags">SciPy · QuTiP · scikit-learn</p>
+          <div class="card-foot"><span class="more" aria-hidden="true">Read more →</span><a href="https://github.com/MrWater00/Microtubule_resonance_classifier">Code ↗</a></div>
         </article>
         
       </div>
@@ -742,6 +754,39 @@
     <p class="note">No microtubule data was analysed. One recording, one run, no repeats. The file does not state its time unit, so picoseconds is an assumption, supported by the delay of the pellet pulses. Window sizes and the wavelet were chosen, not tuned. The 0.011 s timing is measured at 1 ms steps, so it is uncertain by roughly 10%. A sharp notch near 4.4 THz is not interpreted. Data: Leung, Ward-Berry, Wanvig i Dot, Lee and Zeitler, University of Cambridge, CC BY 4.0.</p>
 
     <div class="links"><a href="https://github.com/MrWater00/spectrogram-lab">Code and write-up on GitHub ↗</a></div>
+  </div>
+</dialog>
+
+
+<dialog class="project" id="project-microtubule" aria-labelledby="t-microtubule">
+  <div class="dlg-bar"><span>Project 09 · Finished</span><button class="dlg-close" type="button">Close</button></div>
+  <div class="dlg-body">
+    <h3 id="t-microtubule">How sharp must a hidden rhythm be to be found?</h3>
+    <p class="lead">Some labs report electrical resonance peaks in microtubules, tiny tubes inside cells. Whether those peaks mean anything quantum is debated. I did not test that. I built a toy simulation that plants peaks of known sharpness in noise and measured when a simple classifier can still find them.</p>
+
+    <h4>The question</h4>
+    <p>Take two groups of signals with the same peaks, where one group has sharp peaks and the other has smeared ones. How big must that difference be, and how quiet the noise, before a classifier can tell the groups apart?</p>
+
+    <h4>What I did</h4>
+    <ul class="list">
+      <li>Simulated signals with eight peaks at the positions of the MHz resonances reported in the literature, scaled so that 1 MHz is 1 Hz. One version used random-phase sine waves. The other used QuTiP, treating each peak as a quantum system that slowly loses its rhythm (dephasing).</li>
+      <li>Set how fast each group loses its rhythm from the reported peak sharpness (Q), using tau = Q / (pi x frequency), instead of guessing a time.</li>
+      <li>Checked QuTiP against the exact formula before trusting it. The largest difference was below 1 in 10,000.</li>
+      <li>Added noise, measured band power and peak sharpness, trained logistic regression and a random forest, and tested on signals they had never seen. A control with shuffled labels scored about 50%, as it should.</li>
+      <li>Swept the noise level and the sharpness gap between the groups. Then I noticed the QuTiP signals looked harder only because a fading signal carries less energy, so I equalised the energy and ran it again.</li>
+    </ul>
+
+    <h4>What I found</h4>
+    <ul class="list found">
+      <li>In the main setup, accuracy was 100% at noise 5, 96% at noise 10, and about 53% at noise 30, where the model is guessing.</li>
+      <li>At noise 5 the ordered peaks had to be about 4 times sharper than the other group to score above 90%. At 2 times sharper it fell to 78% and 87% for the two signal sources. At equal sharpness it scored about 52%, which is chance, as it must.</li>
+      <li>The first QuTiP run looked harder than the toy one. The cause was energy, not physics. With energy equalised, the QuTiP-style signal was easier: 100% against 95% at noise 10. This depends on a modelling choice, and the write-up says so.</li>
+    </ul>
+
+    <h4>Limits</h4>
+    <p class="note">The labels are planted. "Ordered" and "decohered" are sharp and smeared peaks that I defined, so the classifier can only find what I built in. It says nothing about whether microtubules behave this way, and nothing about consciousness. The smeared group uses an assumed sharpness (Q = 4, borrowed from the kHz band). The peak positions were read from a figure and not checked against raw data. Quantum coherence time and electrical peak width are treated as the same thing, which is a hypothesis. The QuTiP runs use 40 signals per class and 3 repeats, so they are noisy.</p>
+
+    <div class="links"><a href="https://github.com/MrWater00/Microtubule_resonance_classifier">Code and write-up on GitHub ↗</a></div>
   </div>
 </dialog>
   
